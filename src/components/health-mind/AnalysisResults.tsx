@@ -157,7 +157,10 @@ export function AnalysisResults({ analysis, isLoading, error }: AnalysisResultsP
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => alert(`Placeholder: Show ${facility.name} on map.`)}
+                      onClick={() => {
+                        const query = encodeURIComponent(`${facility.name}, ${facility.type}`);
+                        window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+                      }}
                       className="shrink-0 whitespace-nowrap"
                       aria-label={`View ${facility.name} on map`}
                     >
@@ -177,4 +180,3 @@ export function AnalysisResults({ analysis, isLoading, error }: AnalysisResultsP
     </Card>
   );
 }
-

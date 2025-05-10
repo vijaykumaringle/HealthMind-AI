@@ -4,8 +4,9 @@ import * as React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ListChecks, Users, FlaskConical, Info, AlertCircle, Loader2 } from "lucide-react";
+import { ListChecks, Users, FlaskConical, Info, AlertCircle, Loader2, Hospital, MapPin } from "lucide-react";
 import type { AnalysisResultSuccess } from "@/lib/actions";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -32,6 +33,8 @@ const ResultSection: React.FC<{ title: string; icon: React.ElementType; items?: 
   }
   
   if (!items && !text) return null;
+  if (items && items.length === 0 && !text) return null;
+
 
   return (
     <div className="mb-6">
@@ -66,7 +69,7 @@ export function AnalysisResults({ analysis, isLoading, error }: AnalysisResultsP
   }
 
   if (!isLoading && !analysis && !error) {
-    return null; // Don't show anything if not loading, no analysis, and no error
+    return null;
   }
   
   if (isLoading) {
@@ -87,6 +90,25 @@ export function AnalysisResults({ analysis, isLoading, error }: AnalysisResultsP
           <ResultSection title="Recommended Specialists" icon={Users} isLoading={true} itemsCount={2}/>
           <Separator className="my-6"/>
           <ResultSection title="Recommended Tests" icon={FlaskConical} isLoading={true} itemsCount={2}/>
+          <Separator className="my-6"/>
+          {/* Skeleton for Suggested Medical Facilities section */}
+          <div>
+            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-primary">
+              <Hospital className="h-6 w-6 opacity-50" />
+              <Skeleton className="h-6 w-56" /> {/* Skeleton for title text */}
+            </h3>
+            <div className="space-y-3">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="flex items-center justify-between p-4 border bg-card rounded-lg shadow-sm">
+                  <div className="space-y-1.5 flex-grow mr-4">
+                    <Skeleton className="h-5 w-40" />
+                    <Skeleton className="h-4 w-28" />
+                  </div>
+                  <Skeleton className="h-9 w-24 rounded-md shrink-0" />
+                </div>
+              ))}
+            </div>
+          </div>
           <Separator className="my-6"/>
           <ResultSection title="Summary" icon={Info} text="" isLoading={true} />
         </CardContent>
@@ -117,8 +139,42 @@ export function AnalysisResults({ analysis, isLoading, error }: AnalysisResultsP
         <ResultSection title="Recommended Tests" icon={FlaskConical} items={analysis.recommendedTests} isLoading={false}/>
         {(analysis.recommendedTests?.length ?? 0) > 0 && <Separator className="my-6"/>}
 
+        {/* New Section for Suggested Medical Facilities */}
+        {analysis.suggestedFacilities && analysis.suggestedFacilities.length > 0 && (
+          <>
+            <div> {/* Removed mb-6 as it's within CardContent's space-y-6 */}
+              <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-primary">
+                <Hospital className="h-6 w-6" />
+                Suggested Medical Facilities
+              </h3>
+              <ul className="space-y-3">
+                {analysis.suggestedFacilities.map((facility, index) => (
+                  <li key={index} className="flex items-center justify-between p-4 bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow duration-150 ease-in-out">
+                    <div className="flex-grow mr-4">
+                      <p className="font-semibold text-card-foreground leading-tight">{facility.name}</p>
+                      <p className="text-sm text-muted-foreground">{facility.type}</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => alert(`Placeholder: Show ${facility.name} on map.`)}
+                      className="shrink-0 whitespace-nowrap"
+                      aria-label={`View ${facility.name} on map`}
+                    >
+                      <MapPin className="mr-1.5 h-4 w-4" />
+                      View Map
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <Separator className="my-6"/>
+          </>
+        )}
+
         <ResultSection title="Summary" icon={Info} text={analysis.summary} isLoading={false}/>
       </CardContent>
     </Card>
   );
 }
+

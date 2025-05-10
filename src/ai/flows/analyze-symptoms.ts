@@ -2,7 +2,7 @@
 'use server';
 
 /**
- * @fileOverview Analyzes patient symptoms and medical history to suggest possible conditions and recommend relevant specialists or tests.
+ * @fileOverview Analyzes patient symptoms and medical history to suggest possible conditions, recommend relevant specialists or tests, and suggest nearby medical facilities.
  *
  * - analyzeSymptoms - A function that handles the symptom analysis process.
  * - AnalyzeSymptomsInput - The input type for the analyzeSymptoms function.
@@ -31,6 +31,10 @@ const AnalyzeSymptomsOutputSchema = z.object({
   recommendedTests: z
     .array(z.string())
     .describe('A list of recommended medical tests.'),
+  suggestedFacilities: z.array(z.object({
+    name: z.string().describe("Name of the medical facility."),
+    type: z.string().describe("Type of facility, e.g., Hospital, Clinic, Specialist Office.")
+  })).describe('A list of suggested nearby medical facilities.'),
   summary: z.string().describe('A brief summary of the analysis.'),
 });
 export type AnalyzeSymptomsOutput = z.infer<typeof AnalyzeSymptomsOutputSchema>;
@@ -45,13 +49,14 @@ const prompt = ai.definePrompt({
   name: 'analyzeSymptomsPrompt',
   input: {schema: AnalyzeSymptomsInputSchema},
   output: {schema: AnalyzeSymptomsOutputSchema},
-  prompt: `You are an AI medical assistant specializing in analyzing symptoms and medical history to provide possible conditions, specialists, and tests.
+  prompt: `You are an AI medical assistant specializing in analyzing symptoms and medical history.
 
-  Analyze the following patient information and provide:
-  - A list of possible medical conditions (possibleConditions)
-  - A list of recommended medical specialists (recommendedSpecialists)
-  - A list of recommended medical tests (recommendedTests)
-  - A summary of your analysis (summary)
+  Based on the patient information provided, you need to:
+  1. List possible medical conditions (possibleConditions).
+  2. Recommend relevant medical specialists (recommendedSpecialists).
+  3. Suggest appropriate medical tests (recommendedTests).
+  4. Suggest up to 3 medical facilities (e.g., hospitals, clinics, specialist offices) that could be relevant for the patient, based on the possible conditions or recommended specialists. For each facility, provide its name and type (suggestedFacilities).
+  5. Provide a concise summary of your analysis (summary).
 
   Patient Information: {{{symptomsAndHistory}}}`,
 });
@@ -67,3 +72,4 @@ const analyzeSymptomsFlow = ai.defineFlow(
     return output!;
   }
 );
+

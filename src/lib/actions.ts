@@ -10,6 +10,7 @@ export interface AnalysisResultError {
   possibleConditions?: never;
   recommendedSpecialists?: never;
   recommendedTests?: never;
+  suggestedFacilities?: never; // Added to align with AnalysisResultSuccess
   summary?: never;
 }
 
@@ -29,3 +30,4 @@ export async function submitSymptomsAction(input: AnalyzeSymptomsInput): Promise
     return { error: errorMessage };
   }
 }
+

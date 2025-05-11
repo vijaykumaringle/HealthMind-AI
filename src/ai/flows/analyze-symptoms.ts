@@ -85,14 +85,19 @@ const prompt = ai.definePrompt({
   1. List possible medical conditions (possibleConditions).
   2. Recommend relevant medical specialists (recommendedSpecialists).
   3. Suggest appropriate medical tests (recommendedTests).
-  4. To suggest medical facilities, check if the user has provided their 'location' in the input ({{{location}}}).
-     If a 'location' is provided and is not an empty string:
-     - Use the 'getNearbyMedicalFacilities' tool.
-     - Construct a 'facilityTypeQuery' for the tool. This query MUST combine the type of facility you deem appropriate (e.g., 'hospitals', 'urgent care clinics', 'pediatricians') with the user's provided 'location'. For example, if the user is in 'Pune' and needs a hospital, the query could be 'hospitals in Pune' or 'Hospital near Pune'.
-     - The tool will return a list of facilities. Include up to 3 of these in the 'suggestedFacilities' output, providing their name, address, and type.
-     If 'location' is NOT provided or is an empty string:
-     - Do not use the 'getNearbyMedicalFacilities' tool.
-     - The 'suggestedFacilities' array in your output should be empty. You may note in the summary that location is needed for facility suggestions.
+  4. Suggested Medical Facilities (suggestedFacilities):
+     - Check if a 'location' ({{{location}}}) is provided by the user and is not an empty string.
+     - IF a location IS PROVIDED:
+       - You MUST attempt to use the 'getNearbyMedicalFacilities' tool.
+       - For the 'facilityTypeQuery' parameter of the tool:
+         - If you have recommended specific specialists (e.g., cardiologist, pediatrician), construct the query using that specialist type and the location (e.g., 'cardiologists in {{{location}}}', 'pediatricians near {{{location}}}').
+         - If no specific specialist is identified or general care is more appropriate, search for 'hospitals in {{{location}}}' or 'clinics in {{{location}}}'.
+         - Ensure the query always includes the user's location: '{{{location}}}'.
+       - After the tool returns a list of facilities, you MUST populate the 'suggestedFacilities' field in your output with up to 3 of these facilities. Include their name, address, and type.
+       - If the tool is called but returns no facilities, the 'suggestedFacilities' array should be empty.
+     - IF a location IS NOT PROVIDED or is an empty string:
+       - Do NOT use the 'getNearbyMedicalFacilities' tool.
+       - The 'suggestedFacilities' array in your output MUST be empty. You may note in the summary that location is needed for facility suggestions.
   5. Provide a concise summary of your analysis (summary).
 
   Patient Symptoms and History: {{{symptomsAndHistory}}}
@@ -110,3 +115,4 @@ const analyzeSymptomsFlow = ai.defineFlow(
     return output!;
   }
 );
+

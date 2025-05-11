@@ -1,3 +1,4 @@
+// src/components/health-mind/SymptomForm.tsx
 "use client";
 
 import * as React from "react";
@@ -14,14 +15,16 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input"; // Added Input
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Loader2, Sparkles } from "lucide-react";
+import { FileText, Loader2, Sparkles, MapPinIcon } from "lucide-react"; // Added MapPinIcon
 import type { AnalyzeSymptomsInput } from "@/ai/flows/analyze-symptoms";
 
 const formSchema = z.object({
   symptomsAndHistory: z.string().min(10, {
     message: "Please provide a detailed description of your symptoms and medical history (at least 10 characters).",
   }),
+  location: z.string().optional().describe("Your current location (e.g., city, zip code) to help find nearby facilities."),
 });
 
 type SymptomFormValues = z.infer<typeof formSchema>;
@@ -36,6 +39,7 @@ export function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       symptomsAndHistory: "",
+      location: "",
     },
   });
 
@@ -70,6 +74,27 @@ export function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
                       className="min-h-[150px] text-base resize-none"
                       {...field}
                       aria-label="Symptoms and Medical History"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="location"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-lg font-semibold flex items-center">
+                    <MapPinIcon className="h-5 w-5 mr-2 text-primary/80" />
+                    Your Location (Optional)
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g., Pune, New York, 90210"
+                      className="text-base"
+                      {...field}
+                      aria-label="Your Location to find nearby medical facilities"
                     />
                   </FormControl>
                   <FormMessage />

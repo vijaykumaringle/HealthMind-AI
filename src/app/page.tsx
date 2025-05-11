@@ -68,8 +68,10 @@ export default function HealthMindPage() {
       </main>
       <footer className="py-6 text-center text-foreground/60 border-t border-border/30">
         <p>&copy; {new Date().getFullYear()} HealthMind AI. All rights reserved.</p>
+        <p className="text-sm mt-1">Developed by Vijaykumar Ingle</p>
         <p className="text-xs mt-1">This tool provides information for educational purposes only and is not a substitute for professional medical advice.</p>
       </footer>
     </div>
   );
 }
+

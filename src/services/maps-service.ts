@@ -31,7 +31,7 @@ export async function fetchNearbyMedicalFacilities(
 
   // Pune Data
   if (lowerQuery.includes("pune")) {
-    if (lowerQuery.includes("hospital")) {
+    if (lowerQuery.includes("hospital") && !lowerQuery.includes("oncologist") && !lowerQuery.includes("cancer") && !lowerQuery.includes("surgeon") && !lowerQuery.includes("surgery")) { // Avoid double-listing if specialist query also includes 'hospital'
       results.push(
         { name: "Sahyadri Super Speciality Hospital Deccan", address: "Plot No. 30-C, Erandwane, Deccan Gymkhana, Pune, Maharashtra 411004", type: "Super Speciality Hospital" },
         { name: "Jehangir Hospital", address: "32, Sassoon Rd, Opposite Pune Railway Station, Central Excise Colony, Sangamvadi, Pune, Maharashtra 411001", type: "Multi-Speciality Hospital" },
@@ -39,7 +39,7 @@ export async function fetchNearbyMedicalFacilities(
         { name: "KEM Hospital", address: "489, Rasta Peth, Sardar Moodliar Rd, Pune, Maharashtra 411011", type: "General Hospital" }
       );
     }
-    if (lowerQuery.includes("clinic") && !lowerQuery.includes("pediatric") && !lowerQuery.includes("cardiologist") && !lowerQuery.includes("dermatologist")) { // Avoid double-matching specialist clinics
+    if (lowerQuery.includes("clinic") && !lowerQuery.includes("pediatric") && !lowerQuery.includes("cardiologist") && !lowerQuery.includes("dermatologist") && !lowerQuery.includes("oncologist") && !lowerQuery.includes("surgeon")) {
       results.push(
         { name: "Dr. Joshi's Family Clinic", address: "Shop No 5, Near Balgandharva Chowk, FC Road, Shivajinagar, Pune, Maharashtra 411005", type: "General Clinic" },
         { name: "Wellness First Polyclinic", address: "North Main Road, Koregaon Park, Pune, Maharashtra 411001", type: "Polyclinic" },
@@ -57,6 +57,20 @@ export async function fetchNearbyMedicalFacilities(
             { name: "Cloudnine Hospital - Shivajinagar (Pediatrics)", address: "Plot No. 47, Service Road, Shivajinagar, Pune, Maharashtra 411005", type: "Pediatric & Maternity Hospital"},
             { name: "Dr. Mehta's Children's Clinic", address: "Aundh-Wakad Road, Aundh, Pune, Maharashtra 411007", type: "Pediatric Clinic"}
         );
+    }
+    if (lowerQuery.includes("oncologist") || lowerQuery.includes("cancer")) {
+      results.push(
+          { name: "Galaxy CARE Hospital (Oncology Dept.)", address: "S.No.23, Plot No.207, Karve Rd, Deccan Gymkhana, Pune, Maharashtra 411004", type: "Oncology Hospital / Cancer Care" },
+          { name: "Ruby Hall Clinic (Cancer Center)", address: "40, Sassoon Rd, Sangamvadi, Pune, Maharashtra 411001", type: "Comprehensive Cancer Center" },
+          { name: "Chellaram Hospital - Diabetes Care & Multi-Speciality (Oncology Wing)", address: "Lalani Quantum, Bavdhan, Pune, Maharashtra 411021", type: "Hospital with Oncology Dept."}
+      );
+    }
+    if (lowerQuery.includes("surgeon") || lowerQuery.includes("surgery")) {
+      results.push(
+          { name: "Sahyadri Super Speciality Hospital Deccan (Advanced Surgery)", address: "Plot No. 30-C, Erandwane, Deccan Gymkhana, Pune, Maharashtra 411004", type: "Hospital - Surgical Services" },
+          { name: "Jehangir Hospital (Dept. of Surgery)", address: "32, Sassoon Rd, Opposite Pune Railway Station, Central Excise Colony, Sangamvadi, Pune, Maharashtra 411001", type: "Hospital - Surgical Services" },
+          { name: "Poona Hospital and Research Centre (Surgical Unit)", address: "27, Sadashiv Peth, Near Alka Talkies, Pune, Maharashtra 411030", type: "Hospital with Surgical Unit"}
+      );
     }
   }
   
@@ -107,61 +121,109 @@ export async function fetchNearbyMedicalFacilities(
   }
 
   // Generic fallbacks if no specific location matched or results array is still empty from specific matches
-  if (results.length === 0) {
+  if (results.length === 0 && query.trim() !== "") {
     let facilityType = "Medical Facility"; // Default
-    if (lowerQuery.includes("hospital")) facilityType = "Hospital";
+    // Prioritize specific specialist terms for more relevant generic types
+    if (lowerQuery.includes("oncologist") || lowerQuery.includes("cancer center")) facilityType = "Oncology Center";
+    else if (lowerQuery.includes("surgeon") || lowerQuery.includes("surgery center")) facilityType = "Surgical Center";
+    else if (lowerQuery.includes("cardiologist") || lowerQuery.includes("heart clinic")) facilityType = "Cardiology Clinic";
+    else if (lowerQuery.includes("pediatrician") || lowerQuery.includes("child clinic")) facilityType = "Pediatric Clinic";
+    else if (lowerQuery.includes("dermatologist") || lowerQuery.includes("skin clinic")) facilityType = "Dermatology Clinic";
+    // Then more general terms
+    else if (lowerQuery.includes("hospital")) facilityType = "Hospital";
     else if (lowerQuery.includes("clinic")) facilityType = "Clinic";
     else if (lowerQuery.includes("doctor") || lowerQuery.includes("physician")) facilityType = "Doctor's Office";
-    else if (lowerQuery.includes("specialist")) facilityType = "Specialist Office";
+    else if (lowerQuery.includes("specialist")) facilityType = "Specialist Office"; // Fallback specialist
     else if (lowerQuery.includes("urgent care")) facilityType = "Urgent Care Center";
-    else if (lowerQuery.includes("pediatrician")) facilityType = "Pediatrician Clinic";
-    else if (lowerQuery.includes("cardiologist")) facilityType = "Cardiologist Office";
-    else if (lowerQuery.includes("dermatologist")) facilityType = "Dermatologist Clinic";
 
-    let pseudoLocation = "Anytown"; // Default fallback
+    let pseudoLocation = "Anytown"; 
     const locationKeywords = ["in ", "near ", "at ", "around "];
     for (const keyword of locationKeywords) {
         const keywordIndex = lowerQuery.indexOf(keyword);
         if (keywordIndex !== -1) {
-            const potentialLocation = lowerQuery.substring(keywordIndex + keyword.length).split(/,|\bon\b|\bfor\b|\band\b/)[0].trim();
-            // Remove zip codes and very short words if they are the only thing extracted
+            const potentialLocation = lowerQuery.substring(keywordIndex + keyword.length).split(/,|\bon\b|\bfor\b|\band\b|\bwith\b|\bthe\b/)[0].trim();
             const cleanedLocation = potentialLocation.replace(/\b\d{5}\b/g, '').trim(); 
-            if (cleanedLocation.length > 2 || cleanedLocation.split(' ').length > 1) { // Check if it's a meaningful location string
+            if (cleanedLocation.length > 2 || cleanedLocation.split(' ').length > 1) {
                  pseudoLocation = cleanedLocation.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
                  break;
             }
         }
     }
-    if (pseudoLocation === "Anytown" && lowerQuery.match(/\b\d{5}\b/)) { // If still Anytown but a ZIP was in query
+    if (pseudoLocation === "Anytown" && lowerQuery.match(/\b\d{5}\b/)) {
         pseudoLocation = lowerQuery.match(/\b\d{5}\b/)![0];
     }
 
 
     results.push(
-      { name: `General ${facilityType} of ${pseudoLocation}`, address: `123 Health St, ${pseudoLocation}, USA`, type: facilityType },
-      { name: `Community ${facilityType} Center`, address: `456 Care Ave, ${pseudoLocation}, USA`, type: facilityType }
+      { name: `General ${facilityType} of ${pseudoLocation}`, address: `123 Health St, ${pseudoLocation}, Earth`, type: facilityType },
+      { name: `Community ${facilityType} Center`, address: `456 Care Ave, ${pseudoLocation}, Earth`, type: facilityType }
     );
     if (Math.random() > 0.5) { 
-         results.push({ name: `Advanced ${facilityType} Services`, address: `789 Wellness Blvd, ${pseudoLocation}, USA`, type: facilityType });
+         results.push({ name: `Advanced ${facilityType} Services`, address: `789 Wellness Blvd, ${pseudoLocation}, Earth`, type: facilityType });
     }
   }
   
-  // Remove duplicates by name and address (simple check for mock data)
   const uniqueResults = results.filter((facility, index, self) =>
     index === self.findIndex((f) => (
       f.name === facility.name && f.address === facility.address
     ))
   );
 
-  // Simulate varying number of results, but max 5 for the mock to keep it manageable
-  const finalResults = uniqueResults.slice(0, Math.min(uniqueResults.length, 5));
+  let finalResults = uniqueResults.slice(0, Math.min(uniqueResults.length, 5));
 
-  if (finalResults.length === 0 && query.trim() !== "") { // Avoid warning for empty initial query if that happens
-     console.warn(`Mock maps service: No specific or generic facilities found for query: "${query}". Returning default examples or empty array.`);
-      // Could return a very generic default if absolutely nothing found
-       return [{ name: "Local Health Services", address: "Please specify location for better results", type: "General Information" }];
+  // Emergency fallback: if after all processing, finalResults is empty but query was not, add a placeholder.
+  if (finalResults.length === 0 && query.trim() !== "") {
+    console.warn(`[MAPS-SERVICE WARN] Query "${query}" yielded no results from primary or generic fallback. Creating emergency fallback.`);
+    
+    let emergencyFacilityType = "Medical Facility";
+    let emergencyPseudoLocation = "the specified area";
+
+    const lowerQueryUnmodified = query.toLowerCase(); // Use original query for this simple parse
+
+    // Try to get a type hint from query
+    if (lowerQueryUnmodified.includes("hospital")) emergencyFacilityType = "Hospital";
+    else if (lowerQueryUnmodified.includes("clinic")) emergencyFacilityType = "Clinic";
+    else if (lowerQueryUnmodified.includes("doctor")) emergencyFacilityType = "Doctor's Office";
+    else if (lowerQueryUnmodified.includes("specialist")) emergencyFacilityType = "Specialist Office";
+    else if (lowerQueryUnmodified.includes("pediatrician")) emergencyFacilityType = "Pediatric Clinic";
+    else if (lowerQueryUnmodified.includes("cardiologist")) emergencyFacilityType = "Cardiology Clinic";
+    else if (lowerQueryUnmodified.includes("oncologist")) emergencyFacilityType = "Oncology Center";
+    else if (lowerQueryUnmodified.includes("surgeon")) emergencyFacilityType = "Surgical Center";
+
+
+    // Try to get a location hint from query
+    const locationKeywordsInner = ["in ", "near ", "at ", "around "];
+    let locationFound = false;
+    for (const keyword of locationKeywordsInner) {
+        const keywordIndex = lowerQueryUnmodified.indexOf(keyword);
+        if (keywordIndex !== -1) {
+            const potentialLocation = lowerQueryUnmodified.substring(keywordIndex + keyword.length).split(/,|\bon\b|\bfor\b|\band\b|\bwith\b|\bthe\b/)[0].trim();
+            if (potentialLocation) { // Check if potentialLocation is not empty
+                 emergencyPseudoLocation = potentialLocation.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                 locationFound = true;
+                 break;
+            }
+        }
+    }
+    if (!locationFound) { // If no prepositional location found, check for zip code or just use a generic term
+        const zipMatch = lowerQueryUnmodified.match(/\b\d{5}\b/);
+        if (zipMatch && zipMatch[0]) {
+            emergencyPseudoLocation = zipMatch[0];
+        } else {
+            // If no keywords like "in", "near" and no ZIP, extract last part of query if it's somewhat long
+            const queryParts = query.split(' ');
+            if (queryParts.length > 1 && queryParts[queryParts.length-1].length > 2) { // crude check for a location name
+                emergencyPseudoLocation = queryParts[queryParts.length-1].split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+            }
+        }
+    }
+    
+    finalResults.push({
+      name: `General ${emergencyFacilityType} (Placeholder)`,
+      address: `Could not find specific ${emergencyFacilityType.toLowerCase()}s in ${emergencyPseudoLocation}. Please search for facilities directly using an online map.`,
+      type: emergencyFacilityType,
+    });
   }
-
 
   return finalResults;
 }

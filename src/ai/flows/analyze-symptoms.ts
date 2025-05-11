@@ -23,7 +23,7 @@ const AnalyzeSymptomsInputSchema = z.object({
     .describe(
       "The user's current location (e.g., city, zip code) to find nearby facilities."
     )
- .default("User's location unknown"),
+ .default("User's location is Pune"),
 });
 export type AnalyzeSymptomsInput = z.infer<typeof AnalyzeSymptomsInputSchema>;
 

@@ -1,3 +1,4 @@
+// src/components/health-mind/AnalysisResults.tsx
 "use client";
 
 import * as React from "react";
@@ -91,20 +92,20 @@ export function AnalysisResults({ analysis, isLoading, error }: AnalysisResultsP
           <Separator className="my-6"/>
           <ResultSection title="Recommended Tests" icon={FlaskConical} isLoading={true} itemsCount={2}/>
           <Separator className="my-6"/>
-          {/* Skeleton for Suggested Medical Facilities section */}
           <div>
             <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-primary">
               <Hospital className="h-6 w-6 opacity-50" />
-              <Skeleton className="h-6 w-56" /> {/* Skeleton for title text */}
+              <Skeleton className="h-6 w-56" /> {/* Title: Suggested Medical Facilities */}
             </h3>
             <div className="space-y-3">
-              {Array.from({ length: 2 }).map((_, i) => (
+              {Array.from({ length: 2 }).map((_, i) => ( 
                 <div key={i} className="flex items-center justify-between p-4 border bg-card rounded-lg shadow-sm">
                   <div className="space-y-1.5 flex-grow mr-4">
-                    <Skeleton className="h-5 w-40" />
-                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-5 w-3/4" /> {/* Facility Name */}
+                    <Skeleton className="h-3 w-full max-w-xs" /> {/* Facility Address */}
+                    <Skeleton className="h-4 w-1/2" /> {/* Facility Type */}
                   </div>
-                  <Skeleton className="h-9 w-24 rounded-md shrink-0" />
+                  <Skeleton className="h-9 w-24 rounded-md shrink-0" /> {/* View Map Button */}
                 </div>
               ))}
             </div>
@@ -139,10 +140,9 @@ export function AnalysisResults({ analysis, isLoading, error }: AnalysisResultsP
         <ResultSection title="Recommended Tests" icon={FlaskConical} items={analysis.recommendedTests} isLoading={false}/>
         {(analysis.recommendedTests?.length ?? 0) > 0 && <Separator className="my-6"/>}
 
-        {/* New Section for Suggested Medical Facilities */}
         {analysis.suggestedFacilities && analysis.suggestedFacilities.length > 0 && (
           <>
-            <div> {/* Removed mb-6 as it's within CardContent's space-y-6 */}
+            <div>
               <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-primary">
                 <Hospital className="h-6 w-6" />
                 Suggested Medical Facilities
@@ -152,14 +152,15 @@ export function AnalysisResults({ analysis, isLoading, error }: AnalysisResultsP
                   <li key={index} className="flex items-center justify-between p-4 bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow duration-150 ease-in-out">
                     <div className="flex-grow mr-4">
                       <p className="font-semibold text-card-foreground leading-tight">{facility.name}</p>
-                      <p className="text-sm text-muted-foreground">{facility.type}</p>
+                      {facility.address && <p className="text-xs text-muted-foreground/80 mt-0.5">{facility.address}</p>}
+                      <p className="text-sm text-muted-foreground mt-0.5">{facility.type}</p>
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        const query = encodeURIComponent(`${facility.name}, ${facility.type}`);
-                        window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+                        const query = encodeURIComponent(facility.address || `${facility.name}, ${facility.type}`);
+                        window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank', 'noopener,noreferrer');
                       }}
                       className="shrink-0 whitespace-nowrap"
                       aria-label={`View ${facility.name} on map`}

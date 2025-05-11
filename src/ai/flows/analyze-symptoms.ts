@@ -2,7 +2,7 @@
 'use server';
 
 /**
- * @fileOverview Analyzes patient symptoms and medical history to suggest possible conditions, recommend relevant specialists or tests, and suggest nearby medical facilities.
+ * @fileOverview Analyzes patient symptoms and medical history to suggest possible conditions, recommend relevant specialists or tests. This agent should also fetch the top 3 recommended medical facilities based on the user's current location by integrating with Google Maps. This functionality should be closely tied to this agent.
  *
  * - analyzeSymptoms - A function that handles the symptom analysis process.
  * - AnalyzeSymptomsInput - The input type for the analyzeSymptoms function.
@@ -18,6 +18,12 @@ const AnalyzeSymptomsInputSchema = z.object({
     .describe(
       'A detailed description of the patient’s symptoms and medical history.'
     ),
+  location: z
+    .string()
+    .describe(
+      "The user's current location (e.g., city, zip code) to find nearby facilities."
+    )
+ .default("User's location unknown"),
 });
 export type AnalyzeSymptomsInput = z.infer<typeof AnalyzeSymptomsInputSchema>;
 
@@ -31,10 +37,11 @@ const AnalyzeSymptomsOutputSchema = z.object({
   recommendedTests: z
     .array(z.string())
     .describe('A list of recommended medical tests.'),
-  suggestedFacilities: z.array(z.object({
-    name: z.string().describe("Name of the medical facility."),
-    type: z.string().describe("Type of facility, e.g., Hospital, Clinic, Specialist Office.")
+  suggestedFacilities: z.array(z.object({ 
+    name: z.string().describe("Name of the medical facility."), 
+    type: z.string().describe("Type of facility, e.g., Hospital, Clinic, Specialist Office.") 
   })).describe('A list of suggested nearby medical facilities.'),
+
   summary: z.string().describe('A brief summary of the analysis.'),
 });
 export type AnalyzeSymptomsOutput = z.infer<typeof AnalyzeSymptomsOutputSchema>;
@@ -53,12 +60,14 @@ const prompt = ai.definePrompt({
 
   Based on the patient information provided, you need to:
   1. List possible medical conditions (possibleConditions).
+
   2. Recommend relevant medical specialists (recommendedSpecialists).
   3. Suggest appropriate medical tests (recommendedTests).
-  4. Suggest up to 3 medical facilities (e.g., hospitals, clinics, specialist offices) that could be relevant for the patient, based on the possible conditions or recommended specialists. For each facility, provide its name and type (suggestedFacilities).
+  4. Provide the top 3 recommended medical facilities based on the user's current location and the scenario, retrieved via a Google Maps integration (suggestedFacilities). For each facility, include its name and type.
   5. Provide a concise summary of your analysis (summary).
 
-  Patient Information: {{{symptomsAndHistory}}}`,
+  Patient Symptoms and History: {{{symptomsAndHistory}}}
+  User Location: {{{location}}}`,
 });
 
 const analyzeSymptomsFlow = ai.defineFlow(

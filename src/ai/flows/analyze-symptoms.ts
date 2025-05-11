@@ -53,7 +53,7 @@ const getNearbyMedicalFacilitiesTool = ai.defineTool(
     name: 'getNearbyMedicalFacilities',
     description: 'Fetches a list of nearby medical facilities based on location and type of facility needed. Use this to recommend specific places to the user.',
     inputSchema: z.object({
-      facilityTypeQuery: z.string().describe("A query string that MUST include the location and the type of facility. E.g., 'hospitals in New York', 'pediatric clinics near 90210', 'cardiologists in London'. If user location is not available from the main input, do not use this tool or state that location is needed.")
+      facilityTypeQuery: z.string().min(1, { message: "Internal Error: Facility search query cannot be empty if location is provided and tool is used." }).describe("A query string that MUST include the location and the type of facility. E.g., 'hospitals in New York', 'pediatric clinics near 90210', 'cardiologists in London'. If user location is not available from the main input, do not use this tool or state that location is needed.")
     }),
     outputSchema: z.array(z.object({
       name: z.string().describe("Name of the medical facility."),
@@ -97,12 +97,12 @@ const prompt = ai.definePrompt({
        - For the 'facilityTypeQuery' parameter of the tool:
          - If you have recommended specific specialists (e.g., cardiologist, pediatrician), construct the query using that specialist type and the location (e.g., 'cardiologists in {{{location}}}', 'pediatricians near {{{location}}}').
          - If no specific specialist is identified or general care is more appropriate, search for 'hospitals in {{{location}}}' or 'clinics in {{{location}}}'.
-         - Ensure the query always includes the user's location: '{{{location}}}'.
+         - Ensure the query always includes the user's location: '{{{location}}}' and is not an empty string.
        - Let 'tool_output_facilities' be the list of facilities returned by the 'getNearbyMedicalFacilities' tool.
        - IF 'tool_output_facilities' is not empty:
          - You MUST populate the 'suggestedFacilities' field in your output with up to 3 facilities from 'tool_output_facilities'. Include their name, address, and type.
-       - ELSE (if 'tool_output_facilities' is empty or the tool was not used successfully):
-         - The 'suggestedFacilities' array in your output MUST be empty.
+       - ELSE (if 'tool_output_facilities' is empty or the tool was not used successfully, meaning it returned an empty list):
+         - The 'suggestedFacilities' array in your output MUST be empty. You may note in the summary that facility search for {{{location}}} yielded no specific results if this happens.
      - IF a location IS NOT PROVIDED or is an empty string:
        - Do NOT use the 'getNearbyMedicalFacilities' tool.
        - The 'suggestedFacilities' array in your output MUST be empty. You may note in the summary that location is needed for facility suggestions.

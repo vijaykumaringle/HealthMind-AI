@@ -169,13 +169,61 @@ export async function fetchNearbyMedicalFacilities(
     ))
   );
 
-  const finalResults = uniqueResults.slice(0, Math.min(uniqueResults.length, 5));
+  let finalResults = uniqueResults.slice(0, Math.min(uniqueResults.length, 5));
 
+  // Emergency fallback: if after all processing, finalResults is empty but query was not, add a placeholder.
   if (finalResults.length === 0 && query.trim() !== "") {
-     console.warn(`Mock maps service: No specific or generic facilities found for query: "${query}". Returning empty array as per design for LLM clarity.`);
-     return []; // Return a genuinely empty array if nothing is found
+    console.warn(`[MAPS-SERVICE WARN] Query "${query}" yielded no results from primary or generic fallback. Creating emergency fallback.`);
+    
+    let emergencyFacilityType = "Medical Facility";
+    let emergencyPseudoLocation = "the specified area";
+
+    const lowerQueryUnmodified = query.toLowerCase(); // Use original query for this simple parse
+
+    // Try to get a type hint from query
+    if (lowerQueryUnmodified.includes("hospital")) emergencyFacilityType = "Hospital";
+    else if (lowerQueryUnmodified.includes("clinic")) emergencyFacilityType = "Clinic";
+    else if (lowerQueryUnmodified.includes("doctor")) emergencyFacilityType = "Doctor's Office";
+    else if (lowerQueryUnmodified.includes("specialist")) emergencyFacilityType = "Specialist Office";
+    else if (lowerQueryUnmodified.includes("pediatrician")) emergencyFacilityType = "Pediatric Clinic";
+    else if (lowerQueryUnmodified.includes("cardiologist")) emergencyFacilityType = "Cardiology Clinic";
+    else if (lowerQueryUnmodified.includes("oncologist")) emergencyFacilityType = "Oncology Center";
+    else if (lowerQueryUnmodified.includes("surgeon")) emergencyFacilityType = "Surgical Center";
+
+
+    // Try to get a location hint from query
+    const locationKeywordsInner = ["in ", "near ", "at ", "around "];
+    let locationFound = false;
+    for (const keyword of locationKeywordsInner) {
+        const keywordIndex = lowerQueryUnmodified.indexOf(keyword);
+        if (keywordIndex !== -1) {
+            const potentialLocation = lowerQueryUnmodified.substring(keywordIndex + keyword.length).split(/,|\bon\b|\bfor\b|\band\b|\bwith\b|\bthe\b/)[0].trim();
+            if (potentialLocation) { // Check if potentialLocation is not empty
+                 emergencyPseudoLocation = potentialLocation.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                 locationFound = true;
+                 break;
+            }
+        }
+    }
+    if (!locationFound) { // If no prepositional location found, check for zip code or just use a generic term
+        const zipMatch = lowerQueryUnmodified.match(/\b\d{5}\b/);
+        if (zipMatch && zipMatch[0]) {
+            emergencyPseudoLocation = zipMatch[0];
+        } else {
+            // If no keywords like "in", "near" and no ZIP, extract last part of query if it's somewhat long
+            const queryParts = query.split(' ');
+            if (queryParts.length > 1 && queryParts[queryParts.length-1].length > 2) { // crude check for a location name
+                emergencyPseudoLocation = queryParts[queryParts.length-1].split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+            }
+        }
+    }
+    
+    finalResults.push({
+      name: `General ${emergencyFacilityType} (Placeholder)`,
+      address: `Could not find specific ${emergencyFacilityType.toLowerCase()}s in ${emergencyPseudoLocation}. Please search for facilities directly using an online map.`,
+      type: emergencyFacilityType,
+    });
   }
 
-  // console.log(`[MAPS DEBUG] Final results for query "${query}": ${JSON.stringify(finalResults, null, 2)}`);
   return finalResults;
 }
